@@ -1,0 +1,7 @@
+{
+  "terminal-devoicing": "[bdgz] -> [ptks] / _#",
+  "h-dropping": "h -> _ / _",
+  "g-dropping": "ŋ -> n / _#",
+  "z-rhotacization": "z -> r / V_V",
+  "/æ/-raising": "æ -> eə / _N"
+}
