@@ -1,9 +1,11 @@
 from datetime import date
 from functools import reduce
 from json import load
+from re import search
+from itertools import chain
 
 __all__ = ['closed_by_brackets', 'compose', 'json_to_dict', 'read_file', 'regex_groups', 'remove_brackets',
-           'remove_empty_looks', 'today_str', 'valid_groups']
+           'remove_empty_looks', 'today_str', 'valid_groups', 'search_prn', 'flatten']
 
 
 def compose(*funcs):
@@ -54,3 +56,12 @@ def valid_groups(x: str, y: str) -> bool:
 def remove_brackets(x: str) -> str:
     """Remove starting and ending square brackets of a string."""
     return x.removeprefix("[").removesuffix("]")
+
+
+def search_prn(x: str):
+    """Search for a phonological rule notation string. Returns a Match object or None."""
+    return search(r"^(\S+) -> (\S+) / (\S*_\S*)$", x)
+
+
+def flatten(xs: list[list]) -> list:
+    return list(chain.from_iterable(xs))
