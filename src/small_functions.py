@@ -4,13 +4,10 @@ from json import load
 from re import search
 from itertools import chain
 
-__all__ = ['closed_by_brackets', 'compose', 'json_to_dict', 'read_file', 'regex_groups', 'remove_brackets',
-           'remove_empty_looks', 'today_str', 'valid_groups', 'search_prn', 'flatten']
+from src.hash_dict import HashableDict
 
-
-def compose(*funcs):
-    """Compose functions."""
-    return reduce(lambda f, g: lambda *a, **kw: f(g(*a, **kw)), funcs)
+__all__ = ['closed_by_brackets', 'flatten', 'json_to_dict', 'read_file', 'remove_brackets',
+           'remove_empty_looks', 'search_prn', 'today_str', 'valid_groups']
 
 
 def today_str() -> str:
@@ -23,19 +20,14 @@ def read_file(file: str) -> list[str]:
     with open(file, encoding="utf-8") as f: return f.readlines()
 
 
-def json_to_dict(json_file: str) -> dict:
-    """Open a JSON file and return its contents as a dictionary."""
-    with open(json_file, encoding="utf-8") as j: return load(j)
+def json_to_dict(json_file: str) -> HashableDict:
+    """Open a JSON file and return its contents as a HashableDict."""
+    with open(json_file, encoding="utf-8") as j: return HashableDict(load(j))
 
 
 def remove_empty_looks(x: str) -> str:
     """Remove regex's lookahead and lookbehind if empty."""
     return x.removeprefix("(?<=)").removesuffix("(?=)")
-
-
-def regex_groups(match) -> tuple[str, str, str, str]:
-    """Return the first four groups of a regex search"""
-    return match[1], match[2], match[3], match[4]
 
 
 def start_end_with(x: str, start: str, end: str) -> bool:
@@ -64,4 +56,5 @@ def search_prn(x: str):
 
 
 def flatten(xs: list[list]) -> list:
+    """Transform a list of lists into a list."""
     return list(chain.from_iterable(xs))
