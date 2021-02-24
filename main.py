@@ -1,20 +1,16 @@
+import os
+
 from sys import argv
 from csv import writer
-from os import getcwd
 
-from src.sound_changer import changes_words
-from src.cmd_args import parse_cmd_args
-from src.small_functions import json_to_dict, read_file, today_str
+from src import *
 
 
-def before_after_csv(before: list[str], after: list[str]) -> str:
-    """Create a CSV file with two columns. Return the filename."""
-    filename = f"sound_change_{today_str()}.csv"
-    with open(filename, newline="", encoding="utf-8", mode="w") as f:
+def before_after_csv(before: list[str], after: list[str], filename: str):
+    """Create a CSV file with two columns. Return the name of the file."""
+    with open(f"{filename}.csv", newline="", encoding="utf-8", mode="w") as f:
         for w in zip(before, after):
             writer(f).writerow(u.strip() for u in w)
-
-    return filename
 
 
 def main(args):
@@ -22,16 +18,17 @@ def main(args):
 
     sound_classes = json_to_dict(args_dict['sound-classes-file'])
 
-    if (nss := args_dict['named_sound_change']) is not None:
-        named_rules = json_to_dict(nss[0])
-        chosen_rule = named_rules[nss[1]]
-        words = nss[2].split()
+    if (nsc := args_dict['named_sound_change']) is not None:
+        named_rules = json_to_dict(nsc[0])
+        chosen_rule = named_rules[nsc[1]]
+        words = nsc[2].split()
 
         changed_words = changes_words([chosen_rule], words, sound_classes)
 
         if args_dict['csv_output'] == True:
-            filename = before_after_csv(words, changed_words)
-            print(f"created {filename} in:", getcwd())
+            filename = make_filename()
+            before_after_csv(words, changed_words, filename)
+            created_file(filename + ".csv")
 
         else:
             for w in changed_words:
@@ -43,15 +40,17 @@ def main(args):
 
         changed_words = changes_words(rules, words, sound_classes)
 
+        filename = make_filename()
+
         if args_dict['csv_output'] == True:
-            filename = before_after_csv(words, changed_words)
-            print(f"created {filename} in:", getcwd())
+            before_after_csv(words, changed_words, filename)
+            created_file(filename + ".csv")
 
         else:
-            filename = f"sound_change_{today_str()}.txt"
+            filename += ".txt"
             with open(filename, encoding="utf-8", mode="w") as f:
                 f.writelines(word + '\n' for word in changed_words)
-            print(f"created {filename} in:", getcwd())
+            created_file(filename)
 
 
 if __name__ == '__main__':

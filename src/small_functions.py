@@ -1,4 +1,6 @@
-from datetime import date
+import os
+
+from datetime import datetime as dt
 from functools import reduce
 from json import load
 from re import search
@@ -6,13 +8,14 @@ from itertools import chain
 
 from src.hash_dict import HashableDict
 
-__all__ = ['closed_by_brackets', 'flatten', 'json_to_dict', 'read_file', 'remove_brackets',
-           'remove_empty_looks', 'search_prn', 'today_str', 'valid_groups']
+__all__ = ['closed_by_brackets', 'flatten', 'json_to_dict', 'read_file',
+           'remove_brackets', 'remove_empty_looks', 'search_prn', 'today_str',
+           'valid_groups', 'make_filename', 'created_file']
 
 
 def today_str() -> str:
-    """Return today's date as a string in ISO underscore-separated format."""
-    return str(date.today().isoformat()).replace("-", "_")
+    """Return today's date as a string in ISO hyphen-separated format."""
+    return str(dt.now().isoformat("-", "seconds")).replace(":", "-")
 
 
 def read_file(file: str) -> list[str]:
@@ -58,3 +61,13 @@ def search_prn(x: str):
 def flatten(xs: list[list]) -> list:
     """Transform a list of lists into a list."""
     return list(chain.from_iterable(xs))
+
+
+def make_filename() -> str:
+    """Create a name for the sound change file."""
+    return f"sound-change-{today_str()}"
+
+
+def created_file(filename: str):
+    """Print a message saying that the file was created with the absolute path."""
+    print(f"created {os.path.abspath(filename)}")

@@ -4,7 +4,7 @@ from sys import argv
 from src.hash_dict import HashableDict
 
 
-def parse_cmd_args(args_to_parse) -> HashableDict:
+def parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
     """Parse command line arguments for the sound changer."""
     parser = argparse.ArgumentParser(prog="sound-changer")
 
