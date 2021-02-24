@@ -7,7 +7,7 @@ from src import *
 
 
 def before_after_csv(before: list[str], after: list[str], filename: str):
-    """Create a CSV file with two columns. Return the name of the file."""
+    """Create a CSV file with two columns."""
     with open(f"{filename}.csv", newline="", encoding="utf-8", mode="w") as f:
         for w in zip(before, after):
             writer(f).writerow(u.strip() for u in w)
