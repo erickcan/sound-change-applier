@@ -1,35 +1,57 @@
-from sys import stdout, exit, argv
+import os
+
+from sys import argv
+from csv import writer
 
 from src import *
 
 
+def before_after_csv(before: list[str], after: list[str], filename: str):
+    """Create a CSV file with two columns."""
+    with open(f"{filename}.csv", newline="", encoding="utf-8", mode="w") as f:
+        for w in zip(before, after):
+            writer(f).writerow(u.strip() for u in w)
+
+
 def main(args):
-    def first_arg(name: str, short: str) -> bool:
-        return (f"--{name}" == args[0]) or (f"-{short}" == args[0])
+    args_dict = parse_cmd_args(args)
 
-    if first_arg("help", "h"):
-        print("""
---help | -h\n\tshow this message\n
---named-rule | -n rule-name word [word [···]]\n\tapplies a named sound change to word(s)\n
---file-based-sound-change | -f rules-filepath words-filepath [--csv-output]\n\tapplies \
-sound changes to words (each defined in their own files), and creates a .txt or .csv file \
-with these words\n
-""")
+    sound_classes = json_to_dict(args_dict['sound-classes-file'])
 
-    elif first_arg("named-rule", "n"):
-        for word in args[2:]:
-            print(call_named_rule(args[1])(word))
+    if (nsc := args_dict['named_sound_change']) is not None:
+        named_rules = json_to_dict(nsc[0])
+        chosen_rule = named_rules[nsc[1]]
+        words = nsc[2].split()
 
-    elif first_arg("file-based-sound-change", "f"):
-        files_apply(args[1], args[2], "--csv-output" in args)
+        changed_words = changes_words([chosen_rule], words, sound_classes)
 
-    else:
-        print("Invalid command.", file=stdout)
-        exit(1)
+        if args_dict['csv_output'] == True:
+            filename = make_filename()
+            before_after_csv(words, changed_words, filename)
+            created_file(filename + ".csv")
 
-    return None
+        else:
+            for w in changed_words:
+                print(w)
+
+    if (fbsc := args_dict['file_based_sound_change']) is not None:
+        rules = read_file(fbsc[0])
+        words = list(map(lambda k: k.strip(), read_file(fbsc[1])))
+
+        changed_words = changes_words(rules, words, sound_classes)
+
+        filename = make_filename()
+
+        if args_dict['csv_output'] == True:
+            before_after_csv(words, changed_words, filename)
+            created_file(filename + ".csv")
+
+        else:
+            filename += ".txt"
+            with open(filename, encoding="utf-8", mode="w") as f:
+                f.writelines(word + '\n' for word in changed_words)
+            created_file(filename)
 
 
 if __name__ == '__main__':
     main(argv[1:])
-    exit(0)
