@@ -19,8 +19,8 @@ def parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
                        type=str, nargs=3,
                        metavar=("named-rules-file", "named-rule", "words"))
 
-    parser.add_argument("--csv-output", help="creates a CSV file as output (default: txt)",
-                        required=False, action="store_true")
+    parser.add_argument("--csv-output", required=False, action="store_true",
+                        help="creates a CSV file as output with the before and after of the words")
     parser.add_argument("sound-classes-file",
                         help="JSON file where the sound classes are defined",
                         type=str)
