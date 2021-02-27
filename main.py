@@ -1,5 +1,3 @@
-import os
-
 from sys import argv
 from csv import writer
 
@@ -16,14 +14,18 @@ def before_after_csv(before: list[str], after: list[str], filename: str):
 def main(args):
     args_dict = parse_cmd_args(args)
 
-    sound_classes = json_to_dict(args_dict['sound-classes-file'])
+    sound_classes = try_open_json(args_dict['sound-classes-file'], "sound-classes-file")
 
     if (nsc := args_dict['named_sound_change']) is not None:
-        named_rules = json_to_dict(nsc[0])
+
+        named_rules = try_open_json(nsc[0], "named-rules-file")
         chosen_rule = named_rules[nsc[1]]
         words = nsc[2].split()
 
-        changed_words = changes_words([chosen_rule], words, sound_classes)
+        try:
+            changed_words = changes_words([chosen_rule], words, sound_classes)
+        except NotPhonRule as e:
+            exit(e.message)
 
         if args_dict['csv_output'] == True:
             filename = make_filename()
@@ -35,10 +37,14 @@ def main(args):
                 print(w)
 
     if (fbsc := args_dict['file_based_sound_change']) is not None:
-        rules = read_file(fbsc[0])
-        words = list(map(lambda k: k.strip(), read_file(fbsc[1])))
 
-        changed_words = changes_words(rules, words, sound_classes)
+        rules = try_open_txt(fbsc[0], "rules-file")
+        words = try_open_txt(fbsc[1], "words-file")
+
+        try:
+            changed_words = changes_words(rules, words, sound_classes)
+        except NotPhonRule as e:
+            exit(e.message)
 
         filename = make_filename()
 

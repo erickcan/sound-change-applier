@@ -3,6 +3,7 @@ from functools import cache
 
 from src.small_functions import flatten, search_prn, remove_empty_looks, remove_brackets, valid_groups
 from src.hash_dict import HashableDict
+from src.errs import NotPhonRule
 
 __all__ = ['changes_words']
 
@@ -19,6 +20,9 @@ def convert_to_regex(rule, sound_classes) -> tuple[str, str]:
     ``sound_classes`` dict is substituted by its respective value as
     a regex set of characters.
 
+    Raise NotPhonRule if ``rule`` is not a valid phonological rule
+    notation.
+
     :param str rule: sound change in phonological rule notation
     :param HashableDict sound_classes: sound classes
     :return: regex string, sound after change
@@ -26,7 +30,7 @@ def convert_to_regex(rule, sound_classes) -> tuple[str, str]:
 
     match = search_prn(rule)
     if match is None:
-        raise Exception(f'"{rule}" is not a valid phonological rule notation')
+        raise NotPhonRule(rule)
 
     where = sub("^#", "^", sub("#$", "$", match[3]))  # "#a_b#" -> "^a_b$"
     where = where.split("_")                          # "^a_b$" -> ["^a", "b$"]
@@ -50,10 +54,18 @@ def change_word(rule: str, word: str, sound_classes: HashableDict) -> str:
 
 @cache
 def complex_rule(rule: str) -> list[str]:
-    """Convert a complex sound change (many-to-many) into a list of simpler ones."""
+    """
+    Convert a complex sound change (many-to-many) into a list of simpler ones.
+
+    For example, ``complex_rule("[eo] -> [iu] / _#")`` evaluates to
+    ["e -> i / _#", "o -> u / _#"].
+
+    Raise NotPhonRule if ``rule`` is not a valid phonological rule notation.
+    """
+
     match = search_prn(rule)
     if match is None:
-        raise Exception(f'"{rule}" is not a valid phonological rule notation')
+        raise NotPhonRule(rule)
 
     before, after, where = match[1], match[2], match[3]
 
