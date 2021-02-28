@@ -1,3 +1,4 @@
+import os
 from sys import argv
 from csv import writer
 
@@ -5,10 +6,23 @@ from src import *
 
 
 def before_after_csv(before: list[str], after: list[str], filename: str):
-    """Create a CSV file with two columns."""
-    with open(f"{filename}.csv", newline="", encoding="utf-8", mode="w") as f:
+    """Create a CSV file with two columns in the cwd and print that the file was created."""
+    filename = f"{os.path.join(os.getcwd(), filename)}.csv"
+    with open(filename, newline="", encoding="utf-8", mode="w") as f:
         for w in zip(before, after):
             writer(f).writerow(u.strip() for u in w)
+
+    created_file(filename)
+
+
+def try_changes_words(rules: list[str], words: list[str], sound_classes: HashableDict) -> list[str]:
+    """Try to change words, raise NotPhonRule if any rule is not valid."""
+    try:
+        changed_words = changes_words(rules, words, sound_classes)
+    except NotPhonRule as e:
+        exit(e)
+
+    return changed_words
 
 
 def main(args):
@@ -22,15 +36,11 @@ def main(args):
         chosen_rule = named_rules[nsc[1]]
         words = nsc[2].split()
 
-        try:
-            changed_words = changes_words([chosen_rule], words, sound_classes)
-        except NotPhonRule as e:
-            exit(e.message)
+        changed_words = try_changes_words([chosen_rule], words, sound_classes)
 
         if args_dict['csv_output'] == True:
             filename = make_filename()
             before_after_csv(words, changed_words, filename)
-            created_file(filename + ".csv")
 
         else:
             for w in changed_words:
@@ -41,19 +51,15 @@ def main(args):
         rules = try_open_txt(fbsc[0], "rules-file")
         words = try_open_txt(fbsc[1], "words-file")
 
-        try:
-            changed_words = changes_words(rules, words, sound_classes)
-        except NotPhonRule as e:
-            exit(e.message)
+        changed_words = try_changes_words(rules, words, sound_classes)
 
         filename = make_filename()
 
         if args_dict['csv_output'] == True:
             before_after_csv(words, changed_words, filename)
-            created_file(filename + ".csv")
 
         else:
-            filename += ".txt"
+            filename = f"{os.path.join(os.getcwd(), filename)}.txt"
             with open(filename, encoding="utf-8", mode="w") as f:
                 f.writelines(word + '\n' for word in changed_words)
             created_file(filename)
