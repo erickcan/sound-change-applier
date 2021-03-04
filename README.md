@@ -14,20 +14,20 @@ There are two ways of applying sound changes using the command line: `--file-bas
 - `--named-sound-change` (or `-n`) applies a named sound change to words passed on the command line, and then prints the words after the change.
 
 ### Usage
-For `--file-based-sound-change`:
+For `--file-based-sound-change`:<sup name="a1">[[1]](#f1)</sup>
 ```
 $ sca sound-classes-file -f rules-file words-file [--csv-output]
 ```
 where:
 - `sca` is the sound change applier;
 - `sound-classes-file` is a JSON file where sound classes are defined;
-- `rules-file` is text file where the rules to apply are;
-- `words-file` is text file where the words to which the rules will be applied;
+- `rules-file` is a text file where the rules to apply are;
+- `words-file` is a text file where the words to which the rules will be applied;
 - `--csv-output` is an optional argument that, if selected, creates a CSV file with the before and after of the words instead of a text file.
 
 ---
 
-For `--named-sound-change`:
+For `--named-sound-change`:<sup name="a2">[[2]](#f2)</sup>
 ```
 $ sca sound-classes-file -n named-rules-file named-rule words [--csv-output]
 ```
@@ -35,7 +35,7 @@ where:
 - `sca` is the sound change applier;
 - `sound-classes-file` is a JSON file where sound classes are defined;
 - `named-rules-file` is a JSON file where sound changes and their names are defined;
-- `named-rule` name of the rule to apply (should be defined in the `named-rules-file` file);
+- `named-rule` is the name of the rule to apply (should be defined in the `named-rules-file` file);
 - `words` is a string with the words to change (if more than one word, should be inside quotes and separed by spaces);
 - `--csv-output` is an optional argument that, if selected, creates a CSV file with the before and after of the words instead of just printing the words.
 
@@ -107,11 +107,11 @@ It would print:
 ere
 e
 ad
-alluciated
+allucinated
 ```
 
 ## Rule notation
-The rules should be written in the form `a -> b / x_y`, where `a` becomes `b` when `a` is between `x` and `y`.
+The rules should be written in the form `x -> y / a_b`, where `x` becomes `y` when `x` is between `a` and `b`.
 
 ### Symbols
 | symbol  | meaning       | example                                   |
@@ -125,3 +125,8 @@ The rules should be written in the form `a -> b / x_y`, where `a` becomes `b` wh
 
 ## Dependencies
 This project has no dependencies. It only uses modules of the Python Standard Library.
+
+## Footnotes
+<b name="f1">1.</b> `$ sca -f rules-file words-file [--csv-output] sound-classes-file` and `$ sca [--csv-output] -f rules-file words-file sound-classes-file` are also valid. [↩](#a1)
+
+<b name="f2">2.</b> `$ sca -n named-rules-file named-rule words [--csv-output] sound-classes-file` and `$ sca [--csv-output] -n named-rules-file named-rule words` are also valid. [↩](#a2)
