@@ -2,7 +2,9 @@
 A command-line sound change applier written in Python.
 
 ## Setup
-To start using this sound change applier, you just need to clone this repo:
+To begin using this sound change applier, you just need to download the executable (`.exe`) file in the [releases](https://github.com/erickcan/sound-change-applier/releases) tab.
+
+You can also clone this repo and use the `sca.bat` file:
 ```
 $ git clone https://github.com/erickcan/sound-change-applier.git
 ```
@@ -127,6 +129,5 @@ The rules should be written in the form `x -> y / a_b`, where `x` becomes `y` wh
 This project has no dependencies. It only uses modules of the Python Standard Library.
 
 ## Footnotes
-<b name="f1">1.</b> `$ sca -f rules-file words-file [--csv-output] sound-classes-file` and `$ sca [--csv-output] -f rules-file words-file sound-classes-file` are also valid. [↩](#a1)
-
-<b name="f2">2.</b> `$ sca -n named-rules-file named-rule words [--csv-output] sound-classes-file` and `$ sca [--csv-output] -n named-rules-file named-rule words` are also valid. [↩](#a2)
+1. <b name="f1"></b> `$ sca -f rules-file words-file [--csv-output] sound-classes-file` and `$ sca [--csv-output] -f rules-file words-file sound-classes-file` are also valid. [↩](#a1)
+2. <b name="f2"></b> `$ sca -n named-rules-file named-rule words [--csv-output] sound-classes-file` and `$ sca [--csv-output] -n named-rules-file named-rule words` are also valid. [↩](#a2)
