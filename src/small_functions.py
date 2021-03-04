@@ -69,5 +69,5 @@ def make_filename() -> str:
 
 
 def created_file(filename: str):
-    """Print a message saying that the file was created with the absolute path."""
-    print(f"created {os.path.abspath(filename)}")
+    """Print a message saying that a file was created."""
+    print(f"created {filename}")
