@@ -6,7 +6,10 @@ from src.hash_dict import HashableDict
 
 def parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
     """Parse command line arguments for the sound change applier."""
-    parser = argparse.ArgumentParser(prog="sound-change-applier")
+    parser = argparse.ArgumentParser(
+        prog="sound-change-applier v1.1",
+        description="A program that applies phonological rules to words."
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
 
@@ -21,6 +24,6 @@ def parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
     parser.add_argument("--csv-output", required=False, action="store_true",
                         help="creates a CSV file as output with the before and after of the words")
     parser.add_argument("sound-classes-file", type=str,
-                        help="JSON file where the sound classes are defined")
+                        help="JSON file with sound classes ('-' for default sound classes)")
 
     return HashableDict(parser.parse_args(args_to_parse).__dict__)

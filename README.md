@@ -22,7 +22,7 @@ $ sca sound-classes-file -f rules-file words-file [--csv-output]
 ```
 where:
 - `sca` is the sound change applier;
-- `sound-classes-file` is a JSON file where sound classes are defined;
+- `sound-classes-file` is a JSON file where sound classes are defined (or `-` for the default sound classes);
 - `rules-file` is a text file where the rules to apply are;
 - `words-file` is a text file where the words to which the rules will be applied;
 - `--csv-output` is an optional argument that, if selected, creates a CSV file with the before and after of the words instead of a text file.
@@ -35,7 +35,7 @@ $ sca sound-classes-file -n named-rules-file named-rule words [--csv-output]
 ```
 where:
 - `sca` is the sound change applier;
-- `sound-classes-file` is a JSON file where sound classes are defined;
+- `sound-classes-file` is a JSON file where sound classes are defined (or `-` for the default sound classes);
 - `named-rules-file` is a JSON file where sound changes and their names are defined;
 - `named-rule` is the name of the rule to apply (should be defined in the `named-rules-file` file);
 - `words` is a string with the words to change (if more than one word, should be inside quotes and separed by spaces);
@@ -44,7 +44,7 @@ where:
 ### Examples
 Suppose the following files:
 
-> sound_classes.json
+> sound_classes.json<sup name="a3">[[3]](#f3)</sup>
 ```json
 {
   "V": "aeiou",
@@ -131,3 +131,4 @@ This project has no dependencies. It only uses modules of the Python Standard Li
 ## Footnotes
 1. <b name="f1"></b> `$ sca -f rules-file words-file [--csv-output] sound-classes-file` and `$ sca [--csv-output] -f rules-file words-file sound-classes-file` are also valid. [↩](#a1)
 2. <b name="f2"></b> `$ sca -n named-rules-file named-rule words [--csv-output] sound-classes-file` and `$ sca [--csv-output] -n named-rules-file named-rule words` are also valid. [↩](#a2)
+3. <b name="f3"></b> These are the sound classes for when one enters `-` for the `sound-classes-file` argument. [↩](#a3)

@@ -28,7 +28,12 @@ def try_changes_words(rules: list[str], words: list[str], sound_classes: Hashabl
 def main(args):
     args_dict = parse_cmd_args(args)
 
-    sound_classes = try_open_json(args_dict['sound-classes-file'], "sound-classes-file")
+    sound_classes_filename = args_dict['sound-classes-file']
+    sound_classes = HashableDict({
+        "V": "aeiou", "C": "bcdfghjklmnpqrstvwxyz",
+        "P": "pbtdkg", "F": "fvsz", "N": "mn", "S": "sz"
+        }) if sound_classes_filename == "-"\
+        else try_open_json(sound_classes_filename, "sound-classes-file")
 
     if (nsc := args_dict['named_sound_change']) is not None:
 
@@ -38,7 +43,7 @@ def main(args):
 
         changed_words = try_changes_words([chosen_rule], words, sound_classes)
 
-        if args_dict['csv_output'] == True:
+        if args_dict['csv_output']:
             filename = make_filename()
             before_after_csv(words, changed_words, filename)
 
@@ -55,7 +60,7 @@ def main(args):
 
         filename = make_filename()
 
-        if args_dict['csv_output'] == True:
+        if args_dict['csv_output']:
             before_after_csv(words, changed_words, filename)
 
         else:
