@@ -1,16 +1,12 @@
-import os
-
 from datetime import datetime as dt
-from functools import reduce
 from json import load
-from re import search
-from itertools import chain
+from typing import Optional
 
 from src.hash_dict import HashableDict
 
-__all__ = ['closed_by_brackets', 'flatten', 'json_to_dict', 'read_file',
-           'remove_brackets', 'remove_empty_looks', 'search_prn', 'today_str',
-           'valid_groups', 'make_filename', 'created_file']
+__all__ = ['closed_by_brackets', 'json_to_dict', 'read_file',
+           'remove_brackets', 'remove_empty_looks', 'today_str',
+           'valid_groups', 'make_filename']
 
 
 def today_str() -> str:
@@ -23,8 +19,9 @@ def read_file(file: str) -> list[str]:
     with open(file, encoding="utf-8") as f: return f.readlines()
 
 
-def json_to_dict(json_file: str) -> HashableDict:
+def json_to_dict(json_file: Optional[str]) -> Optional[HashableDict]:
     """Open a JSON file and return its contents as a HashableDict."""
+    if json_file is None: return None
     with open(json_file, encoding="utf-8") as j: return HashableDict(load(j))
 
 
@@ -53,21 +50,6 @@ def remove_brackets(x: str) -> str:
     return x.removeprefix("[").removesuffix("]")
 
 
-def search_prn(x: str):
-    """Search for a phonological rule notation string. Returns a Match object or None."""
-    return search(r"^(\S+) -> (\S+) / (\S*_\S*)$", x)
-
-
-def flatten(xs: list[list]) -> list:
-    """Transform a list of lists into a list."""
-    return list(chain.from_iterable(xs))
-
-
 def make_filename() -> str:
     """Create a name for the sound change file."""
     return f"sound-change-{today_str()}"
-
-
-def created_file(filename: str):
-    """Print a message saying that a file was created."""
-    print(f"created {filename}")

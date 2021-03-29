@@ -1,74 +1,71 @@
-import os
-from sys import argv
 from csv import writer
+from sys import argv
+from typing import Optional
 
-from src import *
+from src.cmd_args import parse_cmd_args
+from src.hash_dict import HashableDict
+from src.small_functions import json_to_dict, read_file, make_filename
+from src.sound_changer import PhonRule, PhonRules
 
 
-def before_after_csv(before: list[str], after: list[str], filename: str):
-    """Create a CSV file with two columns in the cwd and print that the file was created."""
-    filename = f"{os.path.join(os.getcwd(), filename)}.csv"
+def main(args: list[str]):
+    args_dict = parse_cmd_args(args)
+
+    sound_classes: Optional[HashableDict] = _open_sc_file(args_dict["sound_classes_file"])
+
+    ndsc = args_dict["named_sound_change"]
+    fbsc = args_dict["file_based_sound_change"]
+
+    if ndsc is not None:
+        named_rules = json_to_dict(ndsc[0])
+        chosen_rule = named_rules[ndsc[1]]
+        words = ndsc[2].split()
+
+        phon_rule = PhonRule(chosen_rule, sound_classes)
+        changed_words = phon_rule.apply(words)
+
+        if not args_dict["csv_output"]:
+            for w in changed_words:
+                print(w)
+
+    else:
+        rules = _open_txt(fbsc[0])
+        words = _open_txt(fbsc[1])
+
+        phon_rules = PhonRules(rules, sound_classes)
+        changed_words = phon_rules.apply(words)
+
+        if not args_dict["csv_output"]:
+            filename = make_filename() + ".txt"
+            with open(filename, encoding="utf-8", mode="w") as f:
+                f.writelines(word + '\n' for word in changed_words)
+
+    if args_dict["csv_output"]:
+        _before_after_csv(words, changed_words, make_filename())
+
+
+def _open_txt(filename: str) -> list[str]:
+    return list(map(str.strip, read_file(filename)))
+
+
+def _before_after_csv(before: list[str], after: list[str], filename: str):
+    filename += ".csv"
     with open(filename, newline="", encoding="utf-8", mode="w") as f:
         for w in zip(before, after):
             writer(f).writerow(u.strip() for u in w)
 
-    created_file(filename)
 
-
-def try_changes_words(rules: list[str], words: list[str], sound_classes: HashableDict) -> list[str]:
-    """Try to change words, raise NotPhonRule if any rule is not valid."""
-    try:
-        changed_words = changes_words(rules, words, sound_classes)
-    except NotPhonRule as e:
-        exit(e)
-
-    return changed_words
-
-
-def main(args):
-    args_dict = parse_cmd_args(args)
-
-    sound_classes_filename = args_dict['sound-classes-file']
-    sound_classes = HashableDict({
-        "V": "aeiou", "C": "bcdfghjklmnpqrstvwxyz",
-        "P": "pbtdkg", "F": "fvsz", "N": "mn", "S": "sz"
-        }) if sound_classes_filename == "-"\
-        else try_open_json(sound_classes_filename, "sound-classes-file")
-
-    if (nsc := args_dict['named_sound_change']) is not None:
-
-        named_rules = try_open_json(nsc[0], "named-rules-file")
-        chosen_rule = named_rules[nsc[1]]
-        words = nsc[2].split()
-
-        changed_words = try_changes_words([chosen_rule], words, sound_classes)
-
-        if args_dict['csv_output']:
-            filename = make_filename()
-            before_after_csv(words, changed_words, filename)
-
-        else:
-            for w in changed_words:
-                print(w)
-
-    if (fbsc := args_dict['file_based_sound_change']) is not None:
-
-        rules = try_open_txt(fbsc[0], "rules-file")
-        words = try_open_txt(fbsc[1], "words-file")
-
-        changed_words = try_changes_words(rules, words, sound_classes)
-
-        filename = make_filename()
-
-        if args_dict['csv_output']:
-            before_after_csv(words, changed_words, filename)
-
-        else:
-            filename = f"{os.path.join(os.getcwd(), filename)}.txt"
-            with open(filename, encoding="utf-8", mode="w") as f:
-                f.writelines(word + '\n' for word in changed_words)
-            created_file(filename)
+def _open_sc_file(file: Optional[str]) -> Optional[HashableDict]:
+    if file is not None:
+        if not file.lower().endswith(".json"):
+            raise TypeError(
+                "sound-classes-file should be a JSON file"
+            )
+    return json_to_dict(file)
 
 
 if __name__ == '__main__':
-    main(argv[1:])
+    try:
+        main(argv[1:])
+    except Exception as e:
+        exit(f"{type(e).__name__}: {e}")

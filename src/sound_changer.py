@@ -1,92 +1,190 @@
-from re import sub
-from functools import cache
+import re
+from functools import singledispatchmethod
+from typing import Optional, Union
 
-from src.small_functions import flatten, search_prn, remove_empty_looks, remove_brackets, valid_groups
 from src.hash_dict import HashableDict
-from src.errs import NotPhonRule
+from src.small_functions import remove_empty_looks
 
-__all__ = ['changes_words']
-
-
-@cache
-def convert_to_regex(rule, sound_classes) -> tuple[str, str]:
-    """
-    Convert a phonological rule notation string into a regex string.
-
-    Returns a tuple consisting of a regex string representing the
-    sound change and a string with the sound it changes to.
-
-    Sound classes are defined in a HashableDict. The key defined at
-    ``sound_classes`` dict is substituted by its respective value as
-    a regex set of characters.
-
-    Raise NotPhonRule if ``rule`` is not a valid phonological rule
-    notation.
-
-    :param str rule: sound change in phonological rule notation
-    :param HashableDict sound_classes: sound classes
-    :return: regex string, sound after change
-    """
-
-    match = search_prn(rule)
-    if match is None:
-        raise NotPhonRule(rule)
-
-    where = sub("^#", "^", sub("#$", "$", match[3]))  # "#a_b#" -> "^a_b$"
-    where = where.split("_")                          # "^a_b$" -> ["^a", "b$"]
-    where = (f"(?<={where[0]})", f"(?={where[1]})")   # ["^a", "b$"] -> ["(?<=^a)", "(?=b$)"]
-    where = "_".join(where)                           # ["(?<=^a)", "(?=b$)"] -> "(?<=^a)_(?=b$)"
-
-    # convert dictionary to regex set
-    for group, phones in sound_classes.items():
-        where = sub(group, f"[{phones}]", where)
-
-    where = where.replace("_", match[1], 1)
-
-    return remove_empty_looks(where), match[2].replace("_", "", 1)
+__all__ = ['PhonRule', 'PhonRules']
 
 
-@cache
-def change_word(rule: str, word: str, sound_classes: HashableDict) -> str:
-    """Apply a sound change to a word."""
-    return sub(*convert_to_regex(rule, sound_classes), word)
+class PhonRule:
+    def __init__(self, rule_str: str,
+                 sound_classes: Optional[HashableDict] = None):
+        self._rule_str: str = rule_str
+
+        match = re.match(
+            r"^(?P<before>\S+) [-=]?> (?P<after>\S+) / (?P<where>\S*_\S*)$",
+            self._rule_str
+        )
+        if match is None: raise TypeError(
+            f"{self._rule_str} is not a valid phonological rule notation."
+        )
+
+        self._before: str = match["before"]
+        self._after: str = match["after"]
+        self._where: str = match["where"]
+        self._rule_list: list[str] = self._complex_rule()
+
+        self._sound_classes: HashableDict = sound_classes \
+            if sound_classes is not None \
+            else HashableDict({
+                "V": "aeiou", "C": "bcdfghjklmnpqrstvwxyz",
+                "S": "sz", "P": "pbtdkg", "F": "fvsz", "N": "mn",
+            })
+
+        if len(invalids := _invalid_sound_classes(self._sound_classes)) != 0:
+            raise TypeError(
+                f"{str(invalids)[1:-1]} are not valid sound classes"
+            )
+
+    @property
+    def rule(self) -> str:
+        return self._rule_str
+
+    @property
+    def sound_classes(self) -> HashableDict:
+        return self._sound_classes
+
+    @singledispatchmethod
+    def apply(self, words: Union[str, list[str]]) -> Union[str, list[str]]:
+        raise NotImplementedError
+
+    @apply.register
+    def _(self, word: str) -> str:
+        return self._changes_word(word)
+
+    @apply.register
+    def _(self, words: list) -> list[str]:
+        return [self.apply(w) for w in words]
+
+    def _complex_rule(self) -> list[str]:
+        before_groups = _bracket_group(self._before)
+        after_groups = _bracket_group(self._after)
+
+        if before_groups is None or after_groups is None:
+            return [self._rule_str]
+
+        len_pre, len_post = len(before_groups[1]), len(after_groups[1])
+        if len_pre == len_post and len_post != 0:
+            zip_list = zip(before_groups[1], after_groups[1])
+            pre_bg, pre_ag = before_groups[0], after_groups[0]
+            post_bg, post_ag = before_groups[2], after_groups[2]
+
+            return [
+                f"{pre_bg}{x}{post_bg} -> {pre_ag}{y}{post_ag} / {self._where}"
+                for x, y in zip_list
+            ]
+        else:
+            return [self._rule_str]
+
+    def _convert_to_regex(self):
+        where = re.sub("#$", "$", self._where)  # "#a_b#" -> "#a_b$"
+        where = re.sub("^#", "^", where)        # "#a_b$" -> "^a_b$"
+        where = where.split("_")                # "^a_b$" -> ["^a", "b$"]
+        where = (f"(?<={where[0]})", f"(?={where[1]})")  # ["^a", "b$"] -> ["(?<=^a)", "(?=b$)"]
+        where = "_".join(where)                 # ["(?<=^a)", "(?=b$)"] -> "(?<=^a)_(?=b$)"
+
+        for group, phones in self._sound_classes.items():
+            where = re.sub(group, f"[{phones}]", where)
+
+        where = where.replace("_", self._before, 1)
+
+        return remove_empty_looks(where), self._after.replace("_", "", 1)
+
+    def _change_word(self, word: str) -> str:
+        return re.sub(*self._convert_to_regex(), word)
+
+    def _changes_word(self, word: str):
+        for r in self._rule_list:
+            word = PhonRule(r)._change_word(word)
+        return word
+
+    def __repr__(self):
+        return f"PhonRule('{self._rule_str}', {self._sound_classes})"
 
 
-@cache
-def complex_rule(rule: str) -> list[str]:
-    """
-    Convert a complex sound change (many-to-many) into a list of simpler ones.
+class PhonRules:
+    def __init__(self, rules: list[str],
+                 sound_classes: Optional[HashableDict] = None):
+        self._rules: list[str] = rules
 
-    For example, ``complex_rule("[eo] -> [iu] / _#")`` evaluates to
-    ["e -> i / _#", "o -> u / _#"].
+        self._phonrules_list: list[PhonRule] = [PhonRule(rule, sound_classes) for rule in rules]
 
-    Raise NotPhonRule if ``rule`` is not a valid phonological rule notation.
-    """
+        self._sound_classes: HashableDict = sound_classes \
+            if sound_classes is not None \
+            else HashableDict({
+                "V": "aeiou", "C": "bcdfghjklmnpqrstvwxyz",
+                "S": "sz", "P": "pbtdkg", "F": "fvsz", "N": "mn",
+            })
 
-    match = search_prn(rule)
-    if match is None:
-        raise NotPhonRule(rule)
+        if len(invalids := _invalid_sound_classes(self._sound_classes)) != 0:
+            raise TypeError(
+                f"{str(invalids)[1:-1]} are not valid sound classes"
+            )
 
-    before, after, where = match[1], match[2], match[3]
+    @property
+    def rules(self) -> list[str]:
+        return self._rules
 
-    if valid_groups(before, after):
-        zip_list = zip(remove_brackets(before), remove_brackets(after))
+    @property
+    def phonrules_list(self) -> list[PhonRule]:
+        return self._phonrules_list
 
-        return [f"{x} -> {y} / {where}" for x, y in zip_list]
-    else:
-        return [rule]
+    @property
+    def sound_classes(self) -> HashableDict:
+        return self._sound_classes
+
+    def apply(self, word: Union[str, list[str]]) -> Union[str, list[str]]:
+        for r in self._phonrules_list:
+            word = r.apply(word)
+        return word
+
+    def __repr__(self):
+        return f"PhonRules({self._rules}, {self._sound_classes})"
 
 
-def changes_word(rules: list[str], word: str, sound_classes: HashableDict) -> str:
-    """Apply a list of sound changes to a word."""
-    for rule in rules:
-        word = change_word(rule, word, sound_classes)
+def _bracket_group(x: str) -> Optional[tuple[str, str, str]]:
+    depth = 0
+    bef, whi, aft = "", "", ""
+    place = "before_bracket"
+    ended_bracket = False
 
-    return word
+    for char in x:
+
+        if char == "[" and not ended_bracket:
+            depth += 1
+            place = "inside_bracket"
+
+        elif char == "]":
+            if ended_bracket:
+                aft += char
+            depth -= 1
+            if depth == 0:
+                place = "after_bracket"
+                ended_bracket = True
+
+        elif depth >= 0:
+            if place == "before_bracket":
+                bef += char
+            elif place == "inside_bracket":
+                whi += char
+            else:
+                aft += char
+
+        elif depth < 0 and not ended_bracket:
+            break
+
+        else:
+            continue
+
+    return (bef, whi, aft) if (depth == 0 or ended_bracket) else None
 
 
-def changes_words(rules: list[str], words: list[str], sound_classes: HashableDict) -> list[str]:
-    """Apply a list of sound changes to a list of words."""
-    rules = flatten(complex_rule(rule) for rule in rules)
+def _invalid_sound_classes(d: HashableDict) -> list[str]:
+    invalid = filter(lambda x: not _is_upper_char(x), d.keys())
+    return list(invalid)
 
-    return [changes_word(rules, word, sound_classes) for word in words]
+
+def _is_upper_char(x: str) -> bool:
+    return len(x) == 1 and x.isupper()
