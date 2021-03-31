@@ -3,28 +3,56 @@ from functools import singledispatchmethod
 from typing import Optional, Union
 
 from src.hash_dict import HashableDict
-from src.small_functions import remove_empty_looks
 
 __all__ = ['PhonRule', 'PhonRules']
 
 
+class InvalidPhonRule(Exception):
+    pass
+
+
+class InvalidSoundClass(Exception):
+    pass
+
+
 class PhonRule:
+    """
+    A phological rule.
+
+    Valid ways of writing phonological rules:
+    ```
+    x > y / a_b
+    x -> y / a_b
+    x => y / a_b
+    ```
+    where `x` becomes `y` when `x` is between `a` and `b`.
+
+    Raise `InvalidPhonRule` if the rule isn't considered valid.
+    Raise `InvalidSoundClass` if any key of the `sound_classes`
+    argument isn't an uppercase single-character string.
+    """
     def __init__(self, rule_str: str,
-                 sound_classes: Optional[HashableDict] = None):
+                 sound_classes: Optional[HashableDict]=None):
         self._rule_str: str = rule_str
 
         match = re.match(
             r"^(?P<before>\S+) [-=]?> (?P<after>\S+) / (?P<where>\S*_\S*)$",
             self._rule_str
         )
-        if match is None: raise TypeError(
-            f"{self._rule_str} is not a valid phonological rule notation."
-        )
+        if match is None:
+            raise InvalidPhonRule(
+                f"{self._rule_str} is not a valid phonological rule notation."
+            )
 
         self._before: str = match["before"]
         self._after: str = match["after"]
         self._where: str = match["where"]
         self._rule_list: list[str] = self._complex_rule()
+
+        if len(invalids := _invalid_sound_classes(sound_classes)) != 0:
+            raise InvalidSoundClass(
+                f"{str(invalids)[1:-1]} are not valid sound classes"
+            )
 
         self._sound_classes: HashableDict = sound_classes \
             if sound_classes is not None \
@@ -33,21 +61,20 @@ class PhonRule:
                 "S": "sz", "P": "pbtdkg", "F": "fvsz", "N": "mn",
             })
 
-        if len(invalids := _invalid_sound_classes(self._sound_classes)) != 0:
-            raise TypeError(
-                f"{str(invalids)[1:-1]} are not valid sound classes"
-            )
 
     @property
     def rule(self) -> str:
+        """Get the rule as a string."""
         return self._rule_str
 
     @property
     def sound_classes(self) -> HashableDict:
+        """Get the sound classes as a `HashableDict`."""
         return self._sound_classes
 
     @singledispatchmethod
     def apply(self, words: Union[str, list[str]]) -> Union[str, list[str]]:
+        """Apply a phonological rule to word(s)."""
         raise NotImplementedError
 
     @apply.register
@@ -79,18 +106,23 @@ class PhonRule:
             return [self._rule_str]
 
     def _convert_to_regex(self):
-        where = re.sub("#$", "$", self._where)  # "#a_b#" -> "#a_b$"
-        where = re.sub("^#", "^", where)        # "#a_b$" -> "^a_b$"
-        where = where.split("_")                # "^a_b$" -> ["^a", "b$"]
-        where = (f"(?<={where[0]})", f"(?={where[1]})")  # ["^a", "b$"] -> ["(?<=^a)", "(?=b$)"]
-        where = "_".join(where)                 # ["(?<=^a)", "(?=b$)"] -> "(?<=^a)_(?=b$)"
+        # "#a_b#" -> "#a_b$"
+        where = re.sub("#$", "$", self._where)
+        # "#a_b$" -> "^a_b$"
+        where = re.sub("^#", "^", where)
+        # "^a_b$" -> ["^a", "b$"]
+        where = where.split("_")
+        # ["^a", "b$"] -> ["(?<=^a)", "(?=b$)"]
+        where = (f"(?<={where[0]})", f"(?={where[1]})")
+        # ["(?<=^a)", "(?=b$)"] -> "(?<=^a)_(?=b$)"
+        where = "_".join(where)
 
         for group, phones in self._sound_classes.items():
             where = re.sub(group, f"[{phones}]", where)
 
         where = where.replace("_", self._before, 1)
 
-        return remove_empty_looks(where), self._after.replace("_", "", 1)
+        return _remove_empty_looks(where), self._after.replace("_", "", 1)
 
     def _change_word(self, word: str) -> str:
         return re.sub(*self._convert_to_regex(), word)
@@ -105,11 +137,27 @@ class PhonRule:
 
 
 class PhonRules:
+    """
+    A list of phonological rules.
+
+    Valid ways of writing phonological rules:
+    ```
+    x > y / a_b
+    x -> y / a_b
+    x => y / a_b
+    ```
+    where `x` becomes `y` when `x` is between `a` and `b`.
+
+    Raise `InvalidPhonRule` if any rule isn't considered valid.
+    Raise `InvalidSoundClass` if any key of the `sound_classes`
+    argument isn't an uppercase single-character string.
+    """
     def __init__(self, rules: list[str],
                  sound_classes: Optional[HashableDict] = None):
         self._rules: list[str] = rules
 
-        self._phonrules_list: list[PhonRule] = [PhonRule(rule, sound_classes) for rule in rules]
+        self._phonrules_list: list[PhonRule] = [
+            PhonRule(rule, sound_classes) for rule in rules]
 
         self._sound_classes: HashableDict = sound_classes \
             if sound_classes is not None \
@@ -119,23 +167,27 @@ class PhonRules:
             })
 
         if len(invalids := _invalid_sound_classes(self._sound_classes)) != 0:
-            raise TypeError(
+            raise InvalidSoundClass(
                 f"{str(invalids)[1:-1]} are not valid sound classes"
             )
 
     @property
     def rules(self) -> list[str]:
+        """Get the rules as a list of strings."""
         return self._rules
 
     @property
     def phonrules_list(self) -> list[PhonRule]:
+        """Get the rules as a list of `PhonRule`s."""
         return self._phonrules_list
 
     @property
     def sound_classes(self) -> HashableDict:
+        """Get the sound classes as a `HashableDict`."""
         return self._sound_classes
 
     def apply(self, word: Union[str, list[str]]) -> Union[str, list[str]]:
+        """Apply phonological rules to word(s)."""
         for r in self._phonrules_list:
             word = r.apply(word)
         return word
@@ -144,7 +196,17 @@ class PhonRules:
         return f"PhonRules({self._rules}, {self._sound_classes})"
 
 
+def _remove_empty_looks(x: str) -> str:
+    """Remove regex's lookahead and lookbehind if they are empty."""
+    return x.removeprefix("(?<=)").removesuffix("(?=)")
+
+
 def _bracket_group(x: str) -> Optional[tuple[str, str, str]]:
+    """
+    Divide a string in three parts: before, inside, and after the first bracket group.
+
+    Return `None` if the square brackets never close or open.
+    """
     depth = 0
     bef, whi, aft = "", "", ""
     place = "before_bracket"
@@ -182,9 +244,16 @@ def _bracket_group(x: str) -> Optional[tuple[str, str, str]]:
 
 
 def _invalid_sound_classes(d: HashableDict) -> list[str]:
+    """
+    Return a list of sound classes that are considered invalid.
+
+    Sound classes are invalid if they are not a single-character
+    string or are not uppercase.
+    """
     invalid = filter(lambda x: not _is_upper_char(x), d.keys())
     return list(invalid)
 
 
 def _is_upper_char(x: str) -> bool:
+    """Return `True` if `x` is an uppercase single-character string, otherwise `False`."""
     return len(x) == 1 and x.isupper()
