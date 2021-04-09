@@ -71,7 +71,8 @@ def _parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
     """Parse command line arguments for the sound change applier."""
     parser = argparse.ArgumentParser(
         prog="sound-change-applier-v2.0",
-        description="A program that applies phonological rules to words."
+        description="A program that applies phonological rules to words.",
+        epilog="For more information see README.md at <https://github.com/erickcan/sound-change-applier#readme>."
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
@@ -86,8 +87,13 @@ def _parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
 
     parser.add_argument("--csv-output", action="store_true",
                         help="creates a CSV file as output with the before and after of the words")
-    parser.add_argument("-s", "--sound-classes-file", metavar="sound-classes-json", type=str,
-                        help="JSON file with sound classes")
+
+    sc_file = parser.add_mutually_exclusive_group(required=False)
+
+    sc_file.add_argument("-s", "--sound-classes-file", metavar="sound-classes-json", type=str,
+                         help="JSON file with sound classes")
+    sc_file.add_argument("--no-sound-classes", action="store_true",
+                         help="do not use sound classes")
 
     return HashableDict(parser.parse_args(args_to_parse).__dict__)
 
@@ -98,7 +104,10 @@ class ScaArgs:
 
         self._ndsc = args_dict["named_sound_change"]
         self._fbsc = args_dict["file_based_sound_change"]
-        self._sound_classes = _open_sc_file(args_dict["sound_classes_file"])
+        self._no_sound_classes = args_dict["no_sound_classes"]
+        self._sound_classes = HashableDict({}) \
+            if args_dict["no_sound_classes"] \
+            else _open_sc_file(args_dict["sound_classes_file"])
         self._csv_output = args_dict["csv_output"]
 
     @property

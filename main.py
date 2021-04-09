@@ -6,7 +6,6 @@ from src import io
 
 def main(args: list[str]):
     sca_args = io.ScaArgs(args)
-    print(sca_args)
 
     if sca_args.ndsc is not None:
         named_rules = io.json_to_dict(sca_args.ndsc[0])
@@ -14,7 +13,7 @@ def main(args: list[str]):
         words = sca_args.ndsc[2].split()
 
         phon_rule = sc.PhonRule(chosen_rule, sca_args.sound_classes)
-        changed_words = phon_rule.apply(words)
+        changed_words = list(map(phon_rule.apply, words))
 
         if not sca_args.csv_output:
             print(*changed_words, sep='\n')
@@ -24,7 +23,7 @@ def main(args: list[str]):
         words = io.read_file(sca_args.fbsc[1])
 
         phon_rules = sc.PhonRules(rules, sca_args.sound_classes)
-        changed_words = phon_rules.apply(words)
+        changed_words = list(map(phon_rules.apply, words))
 
         if not sca_args.csv_output:
             filename = f"sound-change-{io.today_str()}"

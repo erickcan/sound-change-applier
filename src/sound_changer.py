@@ -1,30 +1,27 @@
 import re
 from functools import singledispatchmethod
 from typing import Optional, Union
+from functools import reduce
 
 from src.hash_dict import HashableDict
 
 __all__ = ['PhonRule', 'PhonRules']
 
+SOUND_CHANGE_REGEX = re.compile(r"^(?P<before>\S+)\s*[-=]?>\s*(?P<after>\S+)\s*/\s*(?P<where>\S*_\S*)$")
 
-class InvalidPhonRule(Exception):
-    pass
+class InvalidPhonRule(Exception): pass
 
-
-class InvalidSoundClass(Exception):
-    pass
+class InvalidSoundClass(Exception): pass
 
 
 class PhonRule:
     """
-    A phological rule.
+    A phonological rule.
 
     Valid ways of writing phonological rules:
-    ```
-    x > y / a_b
-    x -> y / a_b
-    x => y / a_b
-    ```
+        x > y / a_b
+        x -> y / a_b
+        x => y / a_b
     where `x` becomes `y` when `x` is between `a` and `b`.
 
     Raise `InvalidPhonRule` if the rule isn't considered valid.
@@ -33,34 +30,25 @@ class PhonRule:
     """
     def __init__(self, rule_str: str,
                  sound_classes: Optional[HashableDict]=None):
-        self._rule_str: str = rule_str
+        self._sound_classes: HashableDict = _make_sound_classes(sound_classes)
 
-        match = re.match(
-            r"^(?P<before>\S+) [-=]?> (?P<after>\S+) / (?P<where>\S*_\S*)$",
-            self._rule_str
-        )
+        if len(invalids := _invalid_sound_classes(self._sound_classes)) != 0:
+            raise InvalidSoundClass(
+                f"{str(invalids)[1:-1]} are not valid sound classes"
+            )
+
+        self._rule_str: str = reduce(_sub, self._sound_classes.items(), rule_str)
+
+        match = re.match(SOUND_CHANGE_REGEX, self._rule_str)
         if match is None:
             raise InvalidPhonRule(
-                f"{self._rule_str} is not a valid phonological rule notation."
+                f"{rule_str} is not a valid phonological rule notation."
             )
 
         self._before: str = match["before"]
         self._after: str = match["after"]
         self._where: str = match["where"]
         self._rule_list: list[str] = self._complex_rule()
-
-        if len(invalids := _invalid_sound_classes(sound_classes)) != 0:
-            raise InvalidSoundClass(
-                f"{str(invalids)[1:-1]} are not valid sound classes"
-            )
-
-        self._sound_classes: HashableDict = sound_classes \
-            if sound_classes is not None \
-            else HashableDict({
-                "V": "aeiou", "C": "bcdfghjklmnpqrstvwxyz",
-                "S": "sz", "P": "pbtdkg", "F": "fvsz", "N": "mn",
-            })
-
 
     @property
     def rule(self) -> str:
@@ -72,25 +60,20 @@ class PhonRule:
         """Get the sound classes as a `HashableDict`."""
         return self._sound_classes
 
-    @singledispatchmethod
-    def apply(self, words: Union[str, list[str]]) -> Union[str, list[str]]:
-        """Apply a phonological rule to word(s)."""
-        raise NotImplementedError
+    def apply(self, word: str) -> str:
+        """Apply a phonological rule to a word."""
+        return str(reduce(_apply_rule_to_word, self._rule_list, word))
 
-    @apply.register
-    def _(self, word: str) -> str:
-        return self._changes_word(word)
-
-    @apply.register
-    def _(self, words: list) -> list[str]:
-        return [self.apply(w) for w in words]
+    def _change_word(self, word: str) -> str:
+        return re.sub(*self._convert_to_regex(), word)
 
     def _complex_rule(self) -> list[str]:
+        """Convert a complex rule into a sequence of simpler ones."""
         before_groups = _bracket_group(self._before)
         after_groups = _bracket_group(self._after)
 
         if before_groups is None or after_groups is None:
-            return [self._rule_str]
+            return [self.rule]
 
         len_pre, len_post = len(before_groups[1]), len(after_groups[1])
         if len_pre == len_post and len_post != 0:
@@ -98,12 +81,10 @@ class PhonRule:
             pre_bg, pre_ag = before_groups[0], after_groups[0]
             post_bg, post_ag = before_groups[2], after_groups[2]
 
-            return [
-                f"{pre_bg}{x}{post_bg} -> {pre_ag}{y}{post_ag} / {self._where}"
-                for x, y in zip_list
-            ]
+            return [f"{pre_bg}{x}{post_bg} -> {pre_ag}{y}{post_ag} / {self._where}"
+                    for x, y in zip_list]
         else:
-            return [self._rule_str]
+            return [self.rule]
 
     def _convert_to_regex(self):
         # "#a_b#" -> "#a_b$"
@@ -117,23 +98,12 @@ class PhonRule:
         # ["(?<=^a)", "(?=b$)"] -> "(?<=^a)_(?=b$)"
         where = "_".join(where)
 
-        for group, phones in self._sound_classes.items():
-            where = re.sub(group, f"[{phones}]", where)
-
         where = where.replace("_", self._before, 1)
 
         return _remove_empty_looks(where), self._after.replace("_", "", 1)
 
-    def _change_word(self, word: str) -> str:
-        return re.sub(*self._convert_to_regex(), word)
-
-    def _changes_word(self, word: str):
-        for r in self._rule_list:
-            word = PhonRule(r)._change_word(word)
-        return word
-
     def __repr__(self):
-        return f"PhonRule('{self._rule_str}', {self._sound_classes})"
+        return f"PhonRule('{self.rule}', {self._sound_classes})"
 
 
 class PhonRules:
@@ -141,11 +111,9 @@ class PhonRules:
     A list of phonological rules.
 
     Valid ways of writing phonological rules:
-    ```
-    x > y / a_b
-    x -> y / a_b
-    x => y / a_b
-    ```
+        x > y / a_b
+        x -> y / a_b
+        x => y / a_b
     where `x` becomes `y` when `x` is between `a` and `b`.
 
     Raise `InvalidPhonRule` if any rule isn't considered valid.
@@ -155,21 +123,9 @@ class PhonRules:
     def __init__(self, rules: list[str],
                  sound_classes: Optional[HashableDict] = None):
         self._rules: list[str] = rules
-
+        self._sound_classes: HashableDict = _make_sound_classes(sound_classes)
         self._phonrules_list: list[PhonRule] = [
             PhonRule(rule, sound_classes) for rule in rules]
-
-        self._sound_classes: HashableDict = sound_classes \
-            if sound_classes is not None \
-            else HashableDict({
-                "V": "aeiou", "C": "bcdfghjklmnpqrstvwxyz",
-                "S": "sz", "P": "pbtdkg", "F": "fvsz", "N": "mn",
-            })
-
-        if len(invalids := _invalid_sound_classes(self._sound_classes)) != 0:
-            raise InvalidSoundClass(
-                f"{str(invalids)[1:-1]} are not valid sound classes"
-            )
 
     @property
     def rules(self) -> list[str]:
@@ -186,8 +142,8 @@ class PhonRules:
         """Get the sound classes as a `HashableDict`."""
         return self._sound_classes
 
-    def apply(self, word: Union[str, list[str]]) -> Union[str, list[str]]:
-        """Apply phonological rules to word(s)."""
+    def apply(self, word: str) -> str:
+        """Apply phonological rules to a word."""
         for r in self._phonrules_list:
             word = r.apply(word)
         return word
@@ -196,9 +152,30 @@ class PhonRules:
         return f"PhonRules({self._rules}, {self._sound_classes})"
 
 
+def _apply_rule_to_word(w: str, r: str) -> str:
+    """Apply a phonological rule to a word"""
+    return PhonRule(r)._change_word(w)
+
+
+def _make_sound_classes(sc: Optional[HashableDict]) -> HashableDict:
+    """Return `sc` if it is not `None`, otherwise return the default sound classes."""
+    if sc is None:
+        return HashableDict({
+            "V": "aeiou", "C": "bcdfghjklmnpqrstvwxyz",
+            "S": "sz", "P": "pbtdkg", "F": "fvsz", "N": "mn",
+        })
+    else:
+        return sc
+
+
 def _remove_empty_looks(x: str) -> str:
     """Remove regex's lookahead and lookbehind if they are empty."""
     return x.removeprefix("(?<=)").removesuffix("(?=)")
+
+
+def _sub(w: str, d: (str, str)) -> str:
+    """Replace d[0] with f"[{d[1]}]" in `w`."""
+    return re.sub(d[0], f"[{d[1]}]", w)
 
 
 def _bracket_group(x: str) -> Optional[tuple[str, str, str]]:
