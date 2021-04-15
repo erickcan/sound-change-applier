@@ -65,7 +65,7 @@ class PhonRule:
         return str(reduce(_apply_rule_to_word, self._rule_list, word))
 
     def _change_word(self, word: str) -> str:
-        return re.sub(*self._convert_to_regex(), word)
+        return re.sub(self._convert_to_regex(), self._after.replace("_", "", 1), word)
 
     def _complex_rule(self) -> list[str]:
         """Convert a complex rule into a sequence of simpler ones."""
@@ -86,21 +86,27 @@ class PhonRule:
         else:
             return [self.rule]
 
-    def _convert_to_regex(self):
+    def _convert_to_regex(self) -> str:
+        def _looks(w: list[str]) -> tuple[str, str]:
+            before, after = "", ""
+            if len(w0 := w[0]) > 0:
+                before = f"(?<!{w0[:-1]})" if w0[-1] == '!' else f"(?<={w0})"
+            if len(w1 := w[1]) > 0:
+                after = f"(?!{w1[1:]})" if w1[0] == '!' else f"(?={w1})"
+            return before, after
+
         # "#a_b#" -> "#a_b$"
         where = re.sub("#$", "$", self._where)
         # "#a_b$" -> "^a_b$"
         where = re.sub("^#", "^", where)
         # "^a_b$" -> ["^a", "b$"]
         where = where.split("_")
-        # ["^a", "b$"] -> ["(?<=^a)", "(?=b$)"]
-        where = (f"(?<={where[0]})", f"(?={where[1]})")
-        # ["(?<=^a)", "(?=b$)"] -> "(?<=^a)_(?=b$)"
+        # ["^a", "b$"] -> ("(?<=^a)", "(?=b$)")
+        where = _looks(where)
+        # ("(?<=^a)", "(?=b$)") -> "(?<=^a)_(?=b$)"
         where = "_".join(where)
 
-        where = where.replace("_", self._before, 1)
-
-        return _remove_empty_looks(where), self._after.replace("_", "", 1)
+        return where.replace("_", self._before, 1)
 
     def __repr__(self):
         return f"PhonRule('{self.rule}', {self._sound_classes})"
@@ -166,11 +172,6 @@ def _make_sound_classes(sc: Optional[HashableDict]) -> HashableDict:
         })
     else:
         return sc
-
-
-def _remove_empty_looks(x: str) -> str:
-    """Remove regex's lookahead and lookbehind if they are empty."""
-    return x.removeprefix("(?<=)").removesuffix("(?=)")
 
 
 def _sub(w: str, d: (str, str)) -> str:

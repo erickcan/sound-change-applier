@@ -107,13 +107,15 @@ x => y / a_b
 where `x` becomes `y` when `x` is between `a` and `b`. (Spaces between `>`, `->`, `=>` and `/` are insignificant.)
 
 ### Symbols
-| symbol  | meaning       | example                                   |
-| ------- | ------------- | ----------------------------------------- |
-| `#`     | word boundary | `_#` : end of word, `#_` : start of word  |
-| `A..Z`  | sound class   | `Gt` : class `G` followed by `t`          |
-| `[xyz]` | ad-hoc class  | `u[rl]` : `u` followed by `r` or `l`      |
-| `_`     | everywhere    | `ð -> d / _` : `ð` becomes `d` everywhere |
-| `_`     | sound-eraser  | `h -> _ / _` : deletes `h` everywhere     |
+| symbol  | meaning          | example                                                    |
+| ------- | ---------------- | ---------------------------------------------------------- |
+| `#`     | word boundary    | `_#`: end of word, `#_`: start of word                     |
+| `A..Z`  | sound class      | `Gt`: class `G` followed by `t`                            |
+| `[xyz]` | ad-hoc class     | `u[rl]`: `u` followed by `r` or `l`                        |
+| `_`     | everywhere       | `ð -> d / _`: `ð` becomes `d` everywhere                   |
+| `_`     | sound-eraser     | `h -> _ / _`: deletes `h` everywhere                       |
+| `!_`    | not proceeded by | `v -> w / u!_`: `v` into `w` when `v` not proceeded by `u` |
+| `_!`    | not followed by  | `x -> y / _!n`: `x` into `y` when `x` not followed by `n`  |
 
 ## Appendix
 
