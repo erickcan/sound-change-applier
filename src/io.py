@@ -100,28 +100,21 @@ def _parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
 
 class ScaArgs:
     def __init__(self, args: list[str]):
-        args_dict: HashableDict = _parse_cmd_args(args)
-
-        self._ndsc = args_dict["named_sound_change"]
-        self._fbsc = args_dict["file_based_sound_change"]
-        self._no_sound_classes = args_dict["no_sound_classes"]
-        self._sound_classes = HashableDict({}) \
-            if args_dict["no_sound_classes"] \
-            else _open_sc_file(args_dict["sound_classes_file"])
-        self._csv_output = args_dict["csv_output"]
+        self.args_dict: HashableDict = _parse_cmd_args(args)
 
     @property
     def ndsc(self) -> Optional[list[str]]:
-        return self._ndsc
+        return self.args_dict["named_sound_change"]
 
     @property
     def fbsc(self) -> Optional[list[str]]:
-        return self._fbsc
+        return self.args_dict["file_based_sound_change"]
 
     @property
     def sound_classes(self) -> Optional[HashableDict]:
-        return self._sound_classes
-
+        return HashableDict({}) \
+            if self.args_dict["no_sound_classes"] \
+            else _open_sc_file(self.args_dict["sound_classes_file"])
     @property
     def csv_output(self) -> bool:
-        return self._csv_output
+        return self.args_dict["csv_output"]

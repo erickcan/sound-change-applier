@@ -1,6 +1,5 @@
 import re
-from functools import singledispatchmethod
-from typing import Optional, Union
+from typing import Optional
 from functools import reduce
 
 from src.hash_dict import HashableDict
@@ -127,7 +126,7 @@ class PhonRules:
     argument isn't an uppercase single-character string.
     """
     def __init__(self, rules: list[str],
-                 sound_classes: Optional[HashableDict] = None):
+                 sound_classes: Optional[HashableDict]=None):
         self._rules: list[str] = rules
         self._sound_classes: HashableDict = _make_sound_classes(sound_classes)
         self._phonrules_list: list[PhonRule] = [
