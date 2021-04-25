@@ -4,7 +4,7 @@ A command-line sound change applier written in Python.
 ## Setup
 To begin using this sound change applier, you just need to download the executable (`.exe`) file in the [releases page](https://github.com/erickcan/sound-change-applier/releases).
 
-You can also clone this repo and use the `sca.bat` file:
+You can also clone this repo and use the `sca.bat` or `sca.sh` file:
 ```
 $ git clone https://github.com/erickcan/sound-change-applier.git
 ```
