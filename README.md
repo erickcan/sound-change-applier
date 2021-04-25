@@ -91,10 +91,7 @@ $ sca -n named_rules.json h-dropping "here he had hallucinated"
 ```
 It would print:
 ```
-ere
-e
-ad
-allucinated
+ere e ad allucinated
 ```
 
 ## Rule notation

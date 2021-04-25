@@ -16,7 +16,7 @@ def main(args: list[str]):
         changed_words = list(map(phon_rule.apply, words))
 
         if not sca_args.csv_output:
-            print(*changed_words, sep='\n')
+            print(' '.join(changed_words))
 
     else:
         rules = io.read_file(sca_args.fbsc[0])
