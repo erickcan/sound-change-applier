@@ -1,7 +1,7 @@
 from sys import argv
 
-from src import sound_changer as sc
 from src import io
+from src import sound_changer as sc
 
 
 def main(args: list[str]):
@@ -16,7 +16,7 @@ def main(args: list[str]):
         changed_words = list(map(phon_rule.apply, words))
 
         if not sca_args.csv_output:
-            print(' '.join(changed_words))
+            print(" ".join(changed_words))
 
     else:
         rules = io.read_file(sca_args.fbsc[0])
@@ -34,7 +34,7 @@ def main(args: list[str]):
         io.before_after_csv(words, changed_words, filename)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         main(argv[1:])
     except Exception as e:

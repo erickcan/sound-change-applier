@@ -1,16 +1,22 @@
 import re
-from typing import Optional
 from functools import reduce
+from typing import Optional
 
 from src.hash_dict import HashableDict
 
-__all__ = ['PhonRule', 'PhonRules']
+__all__ = ["PhonRule", "PhonRules"]
 
-SOUND_CHANGE_REGEX = re.compile(r"^(?P<before>\S+)\s*[-=]?>\s*(?P<after>\S+)\s*/\s*(?P<where>\S*_\S*)$")
+SOUND_CHANGE_REGEX = re.compile(
+    r"^(?P<before>\S+)\s*[-=]?>\s*(?P<after>\S+)\s*/\s*(?P<where>\S*_\S*)$"
+)
 
-class InvalidPhonRule(Exception): pass
 
-class InvalidSoundClass(Exception): pass
+class InvalidPhonRule(Exception):
+    ...
+
+
+class InvalidSoundClass(Exception):
+    ...
 
 
 class PhonRule:
@@ -27,22 +33,18 @@ class PhonRule:
     Raise `InvalidSoundClass` if any key of the `sound_classes`
     argument isn't an uppercase single-character string.
     """
-    def __init__(self, rule_str: str,
-                 sound_classes: Optional[HashableDict]=None):
+
+    def __init__(self, rule_str: str, sound_classes: Optional[HashableDict] = None):
         self._sound_classes: HashableDict = _make_sound_classes(sound_classes)
 
         if len(invalids := _invalid_sound_classes(self._sound_classes)) != 0:
-            raise InvalidSoundClass(
-                f"{str(invalids)[1:-1]} are not valid sound classes"
-            )
+            raise InvalidSoundClass(f"{str(invalids)[1:-1]} are not valid sound classes")
 
         self._rule_str: str = reduce(_sub, self._sound_classes.items(), rule_str)
 
         match = re.match(SOUND_CHANGE_REGEX, self._rule_str)
         if match is None:
-            raise InvalidPhonRule(
-                f"{rule_str} is not a valid phonological rule notation."
-            )
+            raise InvalidPhonRule(f"{rule_str} is not a valid phonological rule notation.")
 
         self._before: str = match["before"]
         self._after: str = match["after"]
@@ -80,8 +82,9 @@ class PhonRule:
             pre_bg, pre_ag = before_groups[0], after_groups[0]
             post_bg, post_ag = before_groups[2], after_groups[2]
 
-            return [f"{pre_bg}{x}{post_bg} -> {pre_ag}{y}{post_ag} / {self._where}"
-                    for x, y in zip_list]
+            return [
+                f"{pre_bg}{x}{post_bg} -> {pre_ag}{y}{post_ag} / {self._where}" for x, y in zip_list
+            ]
         else:
             return [self.rule]
 
@@ -89,9 +92,9 @@ class PhonRule:
         def _looks(w: list[str]) -> tuple[str, str]:
             before, after = "", ""
             if len(w0 := w[0]) > 0:
-                before = f"(?<!{w0[:-1]})" if w0[-1] == '!' else f"(?<={w0})"
+                before = f"(?<!{w0[:-1]})" if w0[-1] == "!" else f"(?<={w0})"
             if len(w1 := w[1]) > 0:
-                after = f"(?!{w1[1:]})" if w1[0] == '!' else f"(?={w1})"
+                after = f"(?!{w1[1:]})" if w1[0] == "!" else f"(?={w1})"
             return before, after
 
         # "#a_b#" -> "#a_b$"
@@ -125,12 +128,11 @@ class PhonRules:
     Raise `InvalidSoundClass` if any key of the `sound_classes`
     argument isn't an uppercase single-character string.
     """
-    def __init__(self, rules: list[str],
-                 sound_classes: Optional[HashableDict]=None):
+
+    def __init__(self, rules: list[str], sound_classes: Optional[HashableDict] = None):
         self._rules: list[str] = rules
         self._sound_classes: HashableDict = _make_sound_classes(sound_classes)
-        self._phonrules_list: list[PhonRule] = [
-            PhonRule(rule, sound_classes) for rule in rules]
+        self._phonrules_list: list[PhonRule] = [PhonRule(rule, sound_classes) for rule in rules]
 
     @property
     def rules(self) -> list[str]:
@@ -165,10 +167,16 @@ def _apply_rule_to_word(w: str, r: str) -> str:
 def _make_sound_classes(sc: Optional[HashableDict]) -> HashableDict:
     """Return `sc` if it is not `None`, otherwise return the default sound classes."""
     if sc is None:
-        return HashableDict({
-            "V": "aeiou", "C": "bcdfghjklmnpqrstvwxyz",
-            "S": "sz", "P": "pbtdkg", "F": "fvsz", "N": "mn",
-        })
+        return HashableDict(
+            {
+                "V": "aeiou",
+                "C": "bcdfghjklmnpqrstvwxyz",
+                "S": "sz",
+                "P": "pbtdkg",
+                "F": "fvsz",
+                "N": "mn",
+            }
+        )
     else:
         return sc
 

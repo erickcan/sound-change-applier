@@ -6,8 +6,7 @@ from typing import Optional
 
 from src.hash_dict import HashableDict
 
-__all__ = ['today_str', 'read_file', 'write_txt',
-           'json_to_dict', 'before_after_csv', 'ScaArgs']
+__all__ = ["today_str", "read_file", "write_txt", "json_to_dict", "before_after_csv", "ScaArgs"]
 
 
 def today_str() -> str:
@@ -23,9 +22,9 @@ def read_file(file: str) -> list[str]:
 
 def write_txt(filename: str, contents: list[str]):
     """Write a list of strings to a text file."""
-    filename += '.txt'
+    filename += ".txt"
     with open(filename, encoding="utf-8", mode="w") as f:
-        f.writelines(x + '\n' for x in contents)
+        f.writelines(x + "\n" for x in contents)
 
 
 def json_to_dict(json_file: Optional[str]) -> Optional[HashableDict]:
@@ -43,13 +42,13 @@ def json_to_dict(json_file: Optional[str]) -> Optional[HashableDict]:
 
 def before_after_csv(before: list[str], after: list[str], filename: str):
     """Create a two-column CSV file with `before` and `after` as columns."""
-    filename += '.csv'
+    filename += ".csv"
     with open(filename, newline="", encoding="utf-8", mode="w") as f:
         writer(f).writerows(zip(before, after))
 
 
 class NotJsonFile(Exception):
-    pass
+    ...
 
 
 def _open_sc_file(file: Optional[str]) -> Optional[HashableDict]:
@@ -61,9 +60,7 @@ def _open_sc_file(file: Optional[str]) -> Optional[HashableDict]:
     """
     if file is not None:
         if not file.lower().endswith(".json"):
-            raise NotJsonFile(
-                "sound-classes-file should be a JSON file"
-            )
+            raise NotJsonFile("sound-classes-file should be a JSON file")
     return json_to_dict(file)
 
 
@@ -72,28 +69,44 @@ def _parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
     parser = argparse.ArgumentParser(
         prog="sound-change-applier-v2.0",
         description="A program that applies phonological rules to words.",
-        epilog="For more information see README.md at <https://github.com/erickcan/sound-change-applier#readme>."
+        epilog="For more information see README.md at <https://github.com/erickcan/sound-change-applier#readme>.",
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
 
-    group.add_argument("-f", "--file-based-sound-change",
-                       help="applies sound changes through files",
-                       type=str, nargs=2,
-                       metavar=("rules-file", "words-file"))
-    group.add_argument("-n", "--named-sound-change", type=str, nargs=3,
-                       help="applies a named sound change defined in a JSON file",
-                       metavar=("named-rules-file", "named-rule", "words"))
+    group.add_argument(
+        "-f",
+        "--file-based-sound-change",
+        help="applies sound changes through files",
+        type=str,
+        nargs=2,
+        metavar=("rules-file", "words-file"),
+    )
+    group.add_argument(
+        "-n",
+        "--named-sound-change",
+        type=str,
+        nargs=3,
+        help="applies a named sound change defined in a JSON file",
+        metavar=("named-rules-file", "named-rule", "words"),
+    )
 
-    parser.add_argument("--csv-output", action="store_true",
-                        help="creates a CSV file as output with the before and after of the words")
+    parser.add_argument(
+        "--csv-output",
+        action="store_true",
+        help="creates a CSV file as output with the before and after of the words",
+    )
 
     sc_file = parser.add_mutually_exclusive_group(required=False)
 
-    sc_file.add_argument("-s", "--sound-classes-file", metavar="sound-classes-json", type=str,
-                         help="JSON file with sound classes")
-    sc_file.add_argument("--no-sound-classes", action="store_true",
-                         help="do not use sound classes")
+    sc_file.add_argument(
+        "-s",
+        "--sound-classes-file",
+        metavar="sound-classes-json",
+        type=str,
+        help="JSON file with sound classes",
+    )
+    sc_file.add_argument("--no-sound-classes", action="store_true", help="do not use sound classes")
 
     return HashableDict(parser.parse_args(args_to_parse).__dict__)
 
@@ -112,9 +125,12 @@ class ScaArgs:
 
     @property
     def sound_classes(self) -> Optional[HashableDict]:
-        return HashableDict({}) \
-            if self.args_dict["no_sound_classes"] \
+        return (
+            HashableDict({})
+            if self.args_dict["no_sound_classes"]
             else _open_sc_file(self.args_dict["sound_classes_file"])
+        )
+
     @property
     def csv_output(self) -> bool:
         return self.args_dict["csv_output"]
