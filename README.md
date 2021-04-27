@@ -11,7 +11,7 @@ $ git clone https://github.com/erickcan/sound-change-applier.git
 
 ## Command line
 ```
-sca (-f rules-file words-file | -n named-rules-file named-rule words)
+sca (-f rules-file words-file | -n named-rules-json named-rule words)
     [--csv-output] [-s sound-classes-json | --no-sound-classes]
 ```
 ### Usage
@@ -19,7 +19,7 @@ sca (-f rules-file words-file | -n named-rules-file named-rule words)
   - `rules-file`: text file with the rules
   - `words-file`: text file with the words
 - `--named-sound-change` / `-n` to apply a named sound change to words passed on the command line, and then prints the words after the change;
-  - `named-rules-file`: JSON file where sound classes are defined
+  - `named-rules-json`: JSON file where sound classes are defined
   - `named-rule`: name of the rule to apply (defined in `named-rule-file`)
   - `words`: words to apply the sound change
 - `--csv-output` to create a before and after of the changed words;

@@ -60,7 +60,7 @@ def _open_sc_file(file: Optional[str]) -> Optional[HashableDict]:
     """
     if file is not None:
         if not file.lower().endswith(".json"):
-            raise NotJsonFile("sound-classes-file should be a JSON file")
+            raise NotJsonFile("sound-classes-json should be a JSON file")
     return json_to_dict(file)
 
 
@@ -88,7 +88,7 @@ def _parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
         type=str,
         nargs=3,
         help="applies a named sound change defined in a JSON file",
-        metavar=("named-rules-file", "named-rule", "words"),
+        metavar=("named-rules-json", "named-rule", "words"),
     )
 
     parser.add_argument(
@@ -101,7 +101,7 @@ def _parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
 
     sc_file.add_argument(
         "-s",
-        "--sound-classes-file",
+        "--sound-classes-json",
         metavar="sound-classes-json",
         type=str,
         help="JSON file with sound classes",
@@ -128,7 +128,7 @@ class ScaArgs:
         return (
             HashableDict({})
             if self.args_dict["no_sound_classes"]
-            else _open_sc_file(self.args_dict["sound_classes_file"])
+            else _open_sc_file(self.args_dict["sound_classes_json"])
         )
 
     @property
