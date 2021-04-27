@@ -1,4 +1,5 @@
-__all__ = ['HashableDict']
+__all__ = ["HashableDict"]
+
 
 class HashableDict(dict):
     def __hash__(self):
