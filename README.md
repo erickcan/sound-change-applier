@@ -112,7 +112,7 @@ where `x` becomes `y` when `x` is between `a` and `b`. (Spaces between `>`, `->`
 | `[xyz]` | ad-hoc class     | `u[rl]`: `u` followed by `r` or `l`         |
 | `> _`   | sound-eraser     | `h -> _`: deletes `h`                       |
 | `_`     | everywhere, when | `_x`: when followed by `x`, `_`: everywhere |
-| `!_`    | not proceeded by | `u!_`: when not proceeded by `u`            |
+| `!_`    | not preceded by  | `u!_`: when not preceded by `u`             |
 | `_!`    | not followed by  | `_!n`: when not followed by `n`             |
 
 ## Appendix
