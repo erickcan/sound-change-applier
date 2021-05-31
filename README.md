@@ -35,25 +35,25 @@ Suppose the following files:
 > named_rules.json
 ```json
 {
-  "terminal-devoicing": "[bdgz] > [ptks] /  _#",
-  "h-dropping":          "h    -> _      /  _",
-  "z-rhotacization":     "z    -> r      / V_V",
-  "l-vocalization":      "l    => w      /  _!V",
-  "/æ/-raising":         "æ    => eə     /  _N",
-  "th-fronting":         "[θð] -> [fv]   /  _"
+  "terminal-devoicing": "[bdgz] > [ptks] / _#",
+  "h-dropping": "h -> _ / _",
+  "z-rhotacization": "z -> r / V_V",
+  "l-vocalization": "l => w / _!V",
+  "/æ/-raising": "æ => eə / _N",
+  "th-fronting": "[θð] -> [fv] / _"
 }
 ```
 > rules.txt
 ```
-d    => ð   /    V_V
-[gk] -> _   /    #_n
-a    -> ə   /     _#
-l    -> w   /     _!V
-[aou]e>[æøy]/     _
-sw    > s   /     _[ou]
-[ao]N > [ãõ]/     _
-s    => z   /[bdg]_
-e    -> _   /   CC_#
+d => ð / V_V
+[gk] > _ / #_n
+a -> ə / _#
+l -> w / _!V
+[aou]e > [æøy] / _
+sw > s / _[ou]
+[ao]N -> [ãõ] / _
+s => z / [bdg]_
+e -> _ / CC_#
 ```
 > words.txt
 ```

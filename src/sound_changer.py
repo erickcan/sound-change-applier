@@ -34,17 +34,25 @@ class PhonRule:
     argument isn't an uppercase single-character string.
     """
 
-    def __init__(self, rule_str: str, sound_classes: Optional[HashableDict] = None):
+    def __init__(
+        self, rule_str: str, sound_classes: Optional[HashableDict] = None
+    ):
         self._sound_classes: HashableDict = _make_sound_classes(sound_classes)
 
         if len(invalids := _invalid_sound_classes(self._sound_classes)) != 0:
-            raise InvalidSoundClass(f"{str(invalids)[1:-1]} are not valid sound classes")
+            raise InvalidSoundClass(
+                f"{str(invalids)[1:-1]} are not valid sound classes"
+            )
 
-        self._rule_str: str = reduce(_sub, self._sound_classes.items(), rule_str)
+        self._rule_str: str = reduce(
+            _sub, self._sound_classes.items(), rule_str
+        )
 
         match = re.match(SOUND_CHANGE_REGEX, self._rule_str)
         if match is None:
-            raise InvalidPhonRule(f"{rule_str} is not a valid phonological rule notation.")
+            raise InvalidPhonRule(
+                f"{rule_str} is not a valid phonological rule notation."
+            )
 
         self._before: str = match["before"]
         self._after: str = match["after"]
@@ -66,7 +74,9 @@ class PhonRule:
         return str(reduce(_apply_rule_to_word, self._rule_list, word))
 
     def _change_word(self, word: str) -> str:
-        return re.sub(self._convert_to_regex(), self._after.replace("_", "", 1), word)
+        return re.sub(
+            self._convert_to_regex(), self._after.replace("_", "", 1), word
+        )
 
     def _complex_rule(self) -> list[str]:
         """Convert a complex rule into a sequence of simpler ones."""
@@ -83,7 +93,8 @@ class PhonRule:
             post_bg, post_ag = before_groups[2], after_groups[2]
 
             return [
-                f"{pre_bg}{x}{post_bg} -> {pre_ag}{y}{post_ag} / {self._where}" for x, y in zip_list
+                f"{pre_bg}{x}{post_bg} -> {pre_ag}{y}{post_ag} / {self._where}"
+                for x, y in zip_list
             ]
         else:
             return [self.rule]
@@ -129,10 +140,14 @@ class PhonRules:
     argument isn't an uppercase single-character string.
     """
 
-    def __init__(self, rules: list[str], sound_classes: Optional[HashableDict] = None):
+    def __init__(
+        self, rules: list[str], sound_classes: Optional[HashableDict] = None
+    ):
         self._rules: list[str] = rules
         self._sound_classes: HashableDict = _make_sound_classes(sound_classes)
-        self._phonrules_list: list[PhonRule] = [PhonRule(rule, sound_classes) for rule in rules]
+        self._phonrules_list: list[PhonRule] = [
+            PhonRule(rule, sound_classes) for rule in rules
+        ]
 
     @property
     def rules(self) -> list[str]:

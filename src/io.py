@@ -6,7 +6,14 @@ from typing import Optional
 
 from src.hash_dict import HashableDict
 
-__all__ = ["today_str", "read_file", "write_txt", "json_to_dict", "before_after_csv", "ScaArgs"]
+__all__ = [
+    "today_str",
+    "read_file",
+    "write_txt",
+    "json_to_dict",
+    "before_after_csv",
+    "ScaArgs",
+]
 
 
 def today_str() -> str:
@@ -106,7 +113,11 @@ def _parse_cmd_args(args_to_parse: list[str]) -> HashableDict:
         type=str,
         help="JSON file with sound classes",
     )
-    sc_file.add_argument("--no-sound-classes", action="store_true", help="do not use sound classes")
+    sc_file.add_argument(
+        "--no-sound-classes",
+        action="store_true",
+        help="do not use sound classes",
+    )
 
     return HashableDict(parser.parse_args(args_to_parse).__dict__)
 
